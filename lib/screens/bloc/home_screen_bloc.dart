@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:developer';
 import 'dart:io';
 
 import 'package:bloc/bloc.dart';
@@ -39,12 +40,9 @@ class HomeScreenBloc extends Bloc<HomeScreenEvent, HomeScreenState> {
   }
 
   void downloadVideoOrAudio({required bool isAudio}) async {
-    PermissionStatus status = await Permission.storage.status;
-    if (status.isDenied) {
-      Permission.storage.request();
-    }
-    PermissionStatus statusAfter = await Permission.storage.status;
-    if (statusAfter.isGranted) {
+    final storageStatus = await Permission.storage.request();
+    await requestStoragePermission();
+    if (storageStatus.isGranted) {
       final Directory? downloadsDir = await getDownloadsDirectory();
 
       final StreamManifest manifest =
@@ -53,12 +51,26 @@ class HomeScreenBloc extends Bloc<HomeScreenEvent, HomeScreenState> {
           ? manifest.audioOnly.withHighestBitrate()
           : manifest.muxed.withHighestBitrate();
       Stream<List<int>> stream = yt.videos.streamsClient.get(streamInfo);
-      File file = File('${downloadsDir!.path}/${video!.title}.mp4');
+      File file = File(
+          '${downloadsDir!.path}/${video!.title}.${isAudio ? "mp3" : "mp4"}');
       IOSink fileStream = file.openWrite();
 
       await stream.pipe(fileStream);
       await fileStream.flush();
       await fileStream.close();
+    }
+  }
+
+  Future<void> requestStoragePermission() async {
+    final status = await Permission.storage.request();
+    if (status.isGranted) {
+      log(name: "permission", "Permission granted");
+    } else if (status.isDenied) {
+      log(name: "permission", "Permission denied");
+    } else if (status.isPermanentlyDenied) {
+      log(name: "permission", "Permission permanently denied");
+      // Open app settings to allow user to grant permission
+      await openAppSettings();
     }
   }
 }

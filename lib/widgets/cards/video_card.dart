@@ -55,7 +55,6 @@ class _VideoPlayerCardState extends State<VideoPlayerCard> {
             playedColor: AppColor.primaryColor,
             handleColor: AppColor.shadowColor,
           ),
-          onReady: () {},
         ),
       ),
     );
