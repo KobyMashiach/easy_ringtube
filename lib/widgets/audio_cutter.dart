@@ -1,13 +1,20 @@
 import 'dart:io';
-
-import 'package:audioplayers/audioplayers.dart';
+import 'dart:nativewrappers/_internal/vm/lib/ffi_allocation_patch.dart';
 import 'package:easy_ringtube/core/colors.dart';
-import 'package:easy_ringtube/core/text_styles.dart';
+import 'package:easy_ringtube/core/consts.dart';
+import 'package:easy_ringtube/widgets/design/buttons/app_button.dart';
 import 'package:flutter/material.dart';
+import 'package:audioplayers/audioplayers.dart';
+import 'package:flutter_ffmpeg/flutter_ffmpeg.dart';
 
 class AudioCutterWidget extends StatefulWidget {
   final File file;
-  const AudioCutterWidget({Key? key, required this.file}) : super(key: key);
+  final Function((String, String)) onDoneCut;
+  const AudioCutterWidget({
+    Key? key,
+    required this.file,
+    required this.onDoneCut,
+  }) : super(key: key);
 
   @override
   State<AudioCutterWidget> createState() => _AudioCutterWidgetState();
@@ -16,9 +23,13 @@ class AudioCutterWidget extends StatefulWidget {
 class _AudioCutterWidgetState extends State<AudioCutterWidget> {
   late File inputFile;
   final player = AudioPlayer();
+  final flutterFFmpeg = FlutterFFmpeg();
   bool isPlaying = false;
   Duration duration = Duration.zero;
   Duration position = Duration.zero;
+  Duration start = Duration.zero;
+  Duration end = Duration.zero;
+  bool isCutting = false;
 
   @override
   void initState() {
@@ -37,6 +48,7 @@ class _AudioCutterWidgetState extends State<AudioCutterWidget> {
     player.onDurationChanged.listen((Duration d) {
       setState(() {
         duration = d;
+        end = d;
       });
     });
 
@@ -44,7 +56,18 @@ class _AudioCutterWidgetState extends State<AudioCutterWidget> {
       setState(() {
         position = p;
       });
+
+      if (position >= end) {
+        player.seek(start);
+        player.play(DeviceFileSource(inputFile.path));
+      }
     });
+  }
+
+  String _formatFFmpegTime(Duration duration) {
+    final minutes = duration.inMinutes;
+    final seconds = duration.inSeconds.remainder(60);
+    return '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
   }
 
   @override
@@ -55,45 +78,148 @@ class _AudioCutterWidgetState extends State<AudioCutterWidget> {
         border: Border.all(color: Colors.grey),
         borderRadius: BorderRadius.circular(30),
       ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              IconButton(
-                onPressed: _onPlayPause,
-                icon: Icon(isPlaying ? Icons.pause : Icons.play_arrow),
-                iconSize: 50,
-              ),
-              Text(
-                isPlaying ? "עצור" : "נגן",
-                style: AppTextStyle().cardTitle,
-              ),
-            ],
-          ),
-          Slider(
-            value: position.inSeconds.toDouble(),
-            min: 0.0,
-            max: duration.inSeconds.toDouble(),
-            activeColor: AppColor.primaryColor,
-            onChanged: (value) {
-              setState(() {
-                position = Duration(seconds: value.toInt());
-              });
-              player.seek(position);
-            },
-          ),
-          Text('${_formatDuration(position)} / ${_formatDuration(duration)}'),
-        ],
+      child: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            topButtons(),
+            topSlider(),
+            Text('${_formatDuration(position)} / ${_formatDuration(end)}'),
+            startSlider(),
+            endSlider(),
+            AppButton(
+              text: "חתוך ושמור",
+              padding: EdgeInsets.symmetric(horizontal: 80, vertical: 8),
+              textSize: 16,
+              onTap: widget.onDoneCut(
+                  (_formatDuration(start), _formatDuration(end))).call(),
+            ),
+          ],
+        ),
       ),
     );
+  }
+
+  Row endSlider() {
+    return Row(
+      children: [
+        Expanded(flex: 3, child: Text('סיום: ${_formatDuration(end)}')),
+        Expanded(
+          flex: 7,
+          child: Slider(
+            value: end.inSeconds.toDouble(),
+            min: 0.0,
+            max: duration.inSeconds.toDouble(),
+            activeColor: AppColor.shadowColor,
+            onChanged: (value) {
+              setState(() {
+                final newEnd = Duration(seconds: value.toInt());
+                if (newEnd.inSeconds < start.inSeconds + 5) {
+                  end = Duration(seconds: start.inSeconds + 5);
+                } else {
+                  end = newEnd;
+                }
+                if (position > end) {
+                  position = end;
+                  player.seek(position);
+                }
+              });
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Row startSlider() {
+    return Row(
+      children: [
+        Expanded(
+          flex: 3,
+          child: Text('התחלה: ${_formatDuration(start)}'),
+        ),
+        Expanded(
+          flex: 7,
+          child: Slider(
+            value: start.inSeconds.toDouble(),
+            min: 0.0,
+            max: duration.inSeconds.toDouble(),
+            activeColor: AppColor.shadowColor,
+            onChanged: (value) {
+              setState(() {
+                final newStart = Duration(seconds: value.toInt());
+                if (newStart.inSeconds > end.inSeconds - 5) {
+                  start = Duration(seconds: end.inSeconds - 5);
+                } else {
+                  start = newStart;
+                }
+                if (position < start) {
+                  position = start;
+                  player.seek(position);
+                }
+              });
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Slider topSlider() {
+    return Slider(
+      value: position.inSeconds.toDouble(),
+      min: start.inSeconds.toDouble(),
+      max: end.inSeconds.toDouble(),
+      activeColor: AppColor.primaryColor,
+      onChanged: (value) {
+        setState(() {
+          position = Duration(seconds: value.toInt());
+        });
+        player.seek(position);
+      },
+    );
+  }
+
+  Row topButtons() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox.shrink(),
+        const SizedBox.shrink(),
+        Row(
+          children: [
+            Text(
+              isPlaying ? "Pause" : "Play",
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            IconButton(
+              onPressed: _onPlayPause,
+              icon: Icon(isPlaying ? Icons.pause : Icons.play_arrow),
+              iconSize: 50,
+            ),
+          ],
+        ),
+        IconButton(
+          onPressed: _resetDuration,
+          icon: Icon(Icons.restart_alt_rounded),
+        ),
+      ],
+    );
+  }
+
+  void _resetDuration() {
+    start = Duration.zero;
+    end = duration;
   }
 
   void _onPlayPause() {
     if (isPlaying) {
       player.pause();
     } else {
+      player.seek(start);
+
       player.play(DeviceFileSource(inputFile.path));
     }
   }

@@ -52,25 +52,47 @@ class _HomeScreenState extends State<HomeScreen> {
                                 const SizedBox(height: 24),
                                 VideoPlayerCard(video: state.video!),
                                 const SizedBox(height: 24),
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceAround,
+                                  children: [
+                                    Expanded(
+                                      child: AppButton(
+                                          text: "הורד סרטון",
+                                          unfillColors: true,
+                                          padding: EdgeInsets.symmetric(
+                                              horizontal: 8),
+                                          onTap: () => bloc.add(
+                                              HomeScreenDownloadAllVideoEvent())),
+                                    ),
+                                    Expanded(
+                                      child: AppButton(
+                                          text: "הורד אודיו",
+                                          unfillColors: true,
+                                          padding: EdgeInsets.symmetric(
+                                              horizontal: 8),
+                                          onTap: () => bloc.add(
+                                              HomeScreenDownloadAllAudioEvent())),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 24),
                                 AppButton(
-                                    text: "הורד סרטון",
-                                    onTap: () => bloc.add(
-                                        HomeScreenDownloadAllVideoEvent())),
-                                const SizedBox(height: 12),
-                                AppButton(
-                                    text: "הורד אודיו",
-                                    unfillColors: true,
-                                    onTap: () => bloc.add(
-                                        HomeScreenDownloadAllAudioEvent())),
-                                const SizedBox(height: 48),
-                                if (state is HomeScreenGetFile) ...[
-                                  AudioCutterWidget(file: state.file),
-                                  const SizedBox(height: 48),
-                                ],
-                                AppButton(
-                                    text: "audio cutter",
+                                    text: "חיתוך אודיו",
                                     onTap: () => bloc
                                         .add(HomeScreenGetFileToCutEvent())),
+                                if (state is HomeScreenGetFile) ...[
+                                  const SizedBox(height: 24),
+                                  AudioCutterWidget(
+                                    file: state.file,
+                                    onDoneCut: (points) {
+                                      final String start = points.$1;
+                                      final String end = points.$2;
+                                      bloc.add(HomeScreenDownloadCutAudioEvent(
+                                          start: start, end: end));
+                                    },
+                                  ),
+                                ],
                               ]
                             : [],
                       ),

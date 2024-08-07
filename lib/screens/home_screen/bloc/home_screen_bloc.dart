@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:bloc/bloc.dart';
 import 'package:easy_ringtube/core/consts.dart';
+import 'package:flutter_ffmpeg/flutter_ffmpeg.dart';
 import 'package:meta/meta.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -19,6 +20,7 @@ class HomeScreenBloc extends Bloc<HomeScreenEvent, HomeScreenState> {
     on<HomeScreenLoadVideoEvent>(_homeScreenLoadVideoEvent);
     on<HomeScreenDownloadAllVideoEvent>(_homeScreenDownloadAllVideoEvent);
     on<HomeScreenDownloadAllAudioEvent>(_homeScreenDownloadAllAudioEvent);
+    on<HomeScreenDownloadCutAudioEvent>(_homeScreenDownloadCutAudioEvent);
     on<HomeScreenGetFileToCutEvent>(_homeScreenGetFileToCutEvent);
   }
 
@@ -39,6 +41,13 @@ class HomeScreenBloc extends Bloc<HomeScreenEvent, HomeScreenState> {
       HomeScreenDownloadAllAudioEvent event,
       Emitter<HomeScreenState> emit) async {
     downloadVideoOrAudio(isAudio: true);
+  }
+
+  FutureOr<void> _homeScreenDownloadCutAudioEvent(
+      HomeScreenDownloadCutAudioEvent event,
+      Emitter<HomeScreenState> emit) async {
+    downloadVideoOrAudio(
+        isAudio: true, isCut: true, start: event.start, end: event.end);
   }
 
   FutureOr<void> _homeScreenGetFileToCutEvent(
@@ -79,7 +88,13 @@ class HomeScreenBloc extends Bloc<HomeScreenEvent, HomeScreenState> {
     }
   }
 
-  void downloadVideoOrAudio({required bool isAudio}) async {
+  void downloadVideoOrAudio(
+      {required bool isAudio,
+      bool isCut = false,
+      String? start,
+      String? end}) async {
+    final FlutterFFmpeg _flutterFFmpeg = FlutterFFmpeg();
+
     try {
       final storageStatus = await Permission.manageExternalStorage.request();
       if (!storageStatus.isGranted) {
@@ -111,7 +126,19 @@ class HomeScreenBloc extends Bloc<HomeScreenEvent, HomeScreenState> {
       await stream.pipe(fileStream);
       await fileStream.flush();
       await fileStream.close();
+      if (isAudio && isCut) {
+        String cutFilePath =
+            '${downloadsDir.path}/${video!.title}_cut.${isAudio ? "mp3" : "mp4"}';
 
+        // Cut the audio file using FFmpeg
+        await _flutterFFmpeg.execute(
+            '-i $filePath -ss 00:$start -to 00:$end -c copy $cutFilePath');
+
+        log('Cut audio completed: $cutFilePath');
+
+        // Optionally delete the full file if not needed
+        await file.delete();
+      }
       log('Download completed: $filePath');
     } catch (e) {
       log('Error downloading video or audio: $e');
