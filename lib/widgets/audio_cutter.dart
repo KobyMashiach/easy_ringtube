@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'dart:nativewrappers/_internal/vm/lib/ffi_allocation_patch.dart';
 import 'package:easy_ringtube/core/colors.dart';
 import 'package:easy_ringtube/core/consts.dart';
 import 'package:easy_ringtube/widgets/design/buttons/app_button.dart';

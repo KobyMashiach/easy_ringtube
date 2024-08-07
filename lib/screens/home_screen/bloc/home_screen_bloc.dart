@@ -6,7 +6,6 @@ import 'package:bloc/bloc.dart';
 import 'package:easy_ringtube/core/consts.dart';
 import 'package:flutter_ffmpeg/flutter_ffmpeg.dart';
 import 'package:meta/meta.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:youtube_explode_dart/youtube_explode_dart.dart';
 
