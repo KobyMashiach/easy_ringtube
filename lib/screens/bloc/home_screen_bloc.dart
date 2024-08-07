@@ -40,37 +40,47 @@ class HomeScreenBloc extends Bloc<HomeScreenEvent, HomeScreenState> {
   }
 
   void downloadVideoOrAudio({required bool isAudio}) async {
-    final storageStatus = await Permission.storage.request();
-    await requestStoragePermission();
-    if (storageStatus.isGranted) {
-      final Directory? downloadsDir = await getDownloadsDirectory();
+    try {
+      // Request storage permission
+      final storageStatus = await Permission.manageExternalStorage.request();
+      if (!storageStatus.isGranted) {
+        log('Storage permission not granted');
+        return;
+      }
 
+      // Get downloads directory
+      final Directory? downloadsDir = await getDownloadsDirectory();
+      if (downloadsDir == null) {
+        log('Downloads directory not found');
+        return;
+      }
+
+      // Fetch the stream manifest
       final StreamManifest manifest =
           await yt.videos.streamsClient.getManifest(video!.id.value);
+
+      // Select the appropriate stream
       dynamic streamInfo = isAudio
           ? manifest.audioOnly.withHighestBitrate()
           : manifest.muxed.withHighestBitrate();
-      Stream<List<int>> stream = yt.videos.streamsClient.get(streamInfo);
-      File file = File(
-          '${downloadsDir!.path}/${video!.title}.${isAudio ? "mp3" : "mp4"}');
-      IOSink fileStream = file.openWrite();
 
+      // Get the stream
+      Stream<List<int>> stream = yt.videos.streamsClient.get(streamInfo);
+
+      // Create the file
+      String filePath =
+          '${downloadsDir.path}/${video!.title}.${isAudio ? "mp3" : "mp4"}';
+      File file = File(filePath);
+
+      // Write the stream to the file
+      IOSink fileStream = file.openWrite();
       await stream.pipe(fileStream);
       await fileStream.flush();
       await fileStream.close();
-    }
-  }
 
-  Future<void> requestStoragePermission() async {
-    final status = await Permission.storage.request();
-    if (status.isGranted) {
-      log(name: "permission", "Permission granted");
-    } else if (status.isDenied) {
-      log(name: "permission", "Permission denied");
-    } else if (status.isPermanentlyDenied) {
-      log(name: "permission", "Permission permanently denied");
-      // Open app settings to allow user to grant permission
-      await openAppSettings();
+      log('Download completed: $filePath');
+    } catch (e) {
+      log('Error downloading video or audio: $e');
     }
   }
 }
