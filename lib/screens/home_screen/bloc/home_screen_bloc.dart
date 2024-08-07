@@ -75,13 +75,6 @@ class HomeScreenBloc extends Bloc<HomeScreenEvent, HomeScreenState> {
       String filePath = '${downloadsDir.path}/${video!.title}.mp3';
       File file = File(filePath);
       emit(HomeScreenGetFile(video: video, file: file));
-
-      // IOSink fileStream = file.openWrite();
-      // await stream.pipe(fileStream);
-      // await fileStream.flush();
-      // await fileStream.close();
-
-      // log('Download completed: $filePath');
     } catch (e) {
       log('Error downloading video or audio: $e');
     }
@@ -116,6 +109,7 @@ class HomeScreenBloc extends Bloc<HomeScreenEvent, HomeScreenState> {
           : manifest.muxed.withHighestBitrate();
 
       Stream<List<int>> stream = yt.videos.streamsClient.get(streamInfo);
+      Stream<List<int>> stream2 = yt.videos.streamsClient.get(streamInfo);
 
       String filePath =
           '${downloadsDir.path}/${video!.title}.${isAudio ? "mp3" : "mp4"}';
@@ -126,17 +120,27 @@ class HomeScreenBloc extends Bloc<HomeScreenEvent, HomeScreenState> {
       await fileStream.flush();
       await fileStream.close();
       if (isAudio && isCut) {
-        String cutFilePath =
-            '${downloadsDir.path}/${video!.title}_cut.${isAudio ? "mp3" : "mp4"}';
+        try {
+          String cutFilePath =
+              '${downloadsDir.path}/${video!.title}_cut.${isAudio ? "mp3" : "mp4"}';
 
-        // Cut the audio file using FFmpeg
-        await _flutterFFmpeg.execute(
-            '-i $filePath -ss 00:$start -to 00:$end -c copy $cutFilePath');
+          await _flutterFFmpeg.execute(
+              '-i $filePath -ss 00:$start -to 00:$end -c copy $cutFilePath');
 
-        log('Cut audio completed: $cutFilePath');
+          File cutFile = File(cutFilePath);
 
-        // Optionally delete the full file if not needed
-        await file.delete();
+          if (await cutFile.exists()) {
+            log('Cut audio completed: $cutFilePath');
+            //   IOSink fileStream2 = cutFile.openWrite();
+            // await stream2.pipe(fileStream2);
+            // await fileStream2.flush();
+            // await fileStream2.close();
+          } else {
+            log('Failed to create cut file: $cutFilePath');
+          }
+        } catch (e) {
+          log('Error during cutting process: $e');
+        }
       }
       log('Download completed: $filePath');
     } catch (e) {

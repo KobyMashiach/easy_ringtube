@@ -91,8 +91,10 @@ class _AudioCutterWidgetState extends State<AudioCutterWidget> {
               text: "חתוך ושמור",
               padding: EdgeInsets.symmetric(horizontal: 80, vertical: 8),
               textSize: 16,
-              onTap: widget.onDoneCut(
-                  (_formatDuration(start), _formatDuration(end))).call(),
+              onTap: () {
+                widget
+                    .onDoneCut((_formatDuration(start), _formatDuration(end)));
+              },
             ),
           ],
         ),
