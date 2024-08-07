@@ -1,4 +1,4 @@
-import 'package:easy_ringtube/screens/home_screen.dart';
+import 'package:easy_ringtube/screens/home_screen/home_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:kh_easy_dev/kh_easy_dev.dart';
 import 'package:kh_easy_dev/widgets/navigate_page.dart';

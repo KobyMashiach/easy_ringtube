@@ -12,3 +12,5 @@ class HomeScreenLoadVideoEvent extends HomeScreenEvent {
 class HomeScreenDownloadAllVideoEvent extends HomeScreenEvent {}
 
 class HomeScreenDownloadAllAudioEvent extends HomeScreenEvent {}
+
+class HomeScreenGetFileToCutEvent extends HomeScreenEvent {}

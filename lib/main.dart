@@ -1,5 +1,5 @@
 import 'package:easy_ringtube/core/colors.dart';
-import 'package:easy_ringtube/screens/home_screen.dart';
+import 'package:easy_ringtube/screens/home_screen/home_screen.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter/material.dart';
 
