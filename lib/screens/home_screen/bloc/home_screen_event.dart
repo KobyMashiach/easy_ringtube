@@ -9,6 +9,8 @@ class HomeScreenLoadVideoEvent extends HomeScreenEvent {
   HomeScreenLoadVideoEvent({required this.videoUrl});
 }
 
+class HomeScreenResetEvent extends HomeScreenEvent {}
+
 class HomeScreenDownloadAllVideoEvent extends HomeScreenEvent {}
 
 class HomeScreenDownloadAllAudioEvent extends HomeScreenEvent {}

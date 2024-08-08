@@ -11,6 +11,10 @@ final class HomeScreenInitial extends HomeScreenState {
   HomeScreenInitial({required super.video});
 }
 
+final class HomeScreenWrongUrl extends HomeScreenState {
+  HomeScreenWrongUrl({required super.video});
+}
+
 final class HomeScreenLoading extends HomeScreenState {
   HomeScreenLoading({required super.video});
 }

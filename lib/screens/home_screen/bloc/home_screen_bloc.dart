@@ -15,19 +15,24 @@ part 'home_screen_state.dart';
 class HomeScreenBloc extends Bloc<HomeScreenEvent, HomeScreenState> {
   final yt = YoutubeExplode();
   late Video? video;
-  HomeScreenBloc() : super(HomeScreenLoading(video: null)) {
+  HomeScreenBloc() : super(HomeScreenInitial(video: null)) {
     on<HomeScreenLoadVideoEvent>(_homeScreenLoadVideoEvent);
     on<HomeScreenDownloadAllVideoEvent>(_homeScreenDownloadAllVideoEvent);
     on<HomeScreenDownloadAllAudioEvent>(_homeScreenDownloadAllAudioEvent);
     on<HomeScreenDownloadCutAudioEvent>(_homeScreenDownloadCutAudioEvent);
     on<HomeScreenGetFileToCutEvent>(_homeScreenGetFileToCutEvent);
+    on<HomeScreenResetEvent>(_homeScreenResetEvent);
   }
 
   FutureOr<void> _homeScreenLoadVideoEvent(
       HomeScreenLoadVideoEvent event, Emitter<HomeScreenState> emit) async {
     emit(HomeScreenLoading(video: null));
-    video = await yt.videos.get(event.videoUrl);
-    emit(HomeScreenGetVideo(video: video!));
+    try {
+      video = await yt.videos.get(event.videoUrl);
+      emit(HomeScreenGetVideo(video: video!));
+    } catch (e) {
+      emit(HomeScreenWrongUrl(video: null));
+    }
   }
 
   FutureOr<void> _homeScreenDownloadAllVideoEvent(
@@ -109,7 +114,6 @@ class HomeScreenBloc extends Bloc<HomeScreenEvent, HomeScreenState> {
           : manifest.muxed.withHighestBitrate();
 
       Stream<List<int>> stream = yt.videos.streamsClient.get(streamInfo);
-      Stream<List<int>> stream2 = yt.videos.streamsClient.get(streamInfo);
 
       String filePath =
           '${downloadsDir.path}/${video!.title}.${isAudio ? "mp3" : "mp4"}';
@@ -124,17 +128,21 @@ class HomeScreenBloc extends Bloc<HomeScreenEvent, HomeScreenState> {
           String cutFilePath =
               '${downloadsDir.path}/${video!.title}_cut.${isAudio ? "mp3" : "mp4"}';
 
-          await _flutterFFmpeg.execute(
-              '-i $filePath -ss 00:$start -to 00:$end -c copy $cutFilePath');
+          log("start: 00:$start end: 00:$end");
+
+          int rc = await _flutterFFmpeg.execute(
+              '-i "$filePath" -ss 00:$start -to 00:$end "$cutFilePath"');
+
+          if (rc == 0) {
+            log("FFmpeg process completed successfully.");
+          } else {
+            log("FFmpeg process failed with return code $rc.");
+          }
 
           File cutFile = File(cutFilePath);
 
           if (await cutFile.exists()) {
             log('Cut audio completed: $cutFilePath');
-            //   IOSink fileStream2 = cutFile.openWrite();
-            // await stream2.pipe(fileStream2);
-            // await fileStream2.flush();
-            // await fileStream2.close();
           } else {
             log('Failed to create cut file: $cutFilePath');
           }
@@ -146,5 +154,11 @@ class HomeScreenBloc extends Bloc<HomeScreenEvent, HomeScreenState> {
     } catch (e) {
       log('Error downloading video or audio: $e');
     }
+  }
+
+  FutureOr<void> _homeScreenResetEvent(
+      HomeScreenResetEvent event, Emitter<HomeScreenState> emit) {
+    video = null;
+    emit(HomeScreenInitial(video: null));
   }
 }
