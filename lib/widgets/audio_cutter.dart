@@ -7,13 +7,15 @@ import 'package:audioplayers/audioplayers.dart';
 class AudioCutterWidget extends StatefulWidget {
   final File file;
   final Function((String, String)) onDoneCut;
+  final VoidCallback onSetRingtone;
   final bool? onCutDownload;
-  const AudioCutterWidget({
-    Key? key,
-    required this.file,
-    required this.onDoneCut,
-    this.onCutDownload,
-  }) : super(key: key);
+  const AudioCutterWidget(
+      {Key? key,
+      required this.file,
+      required this.onDoneCut,
+      required this.onCutDownload,
+      required this.onSetRingtone})
+      : super(key: key);
 
   @override
   State<AudioCutterWidget> createState() => _AudioCutterWidgetState();
@@ -62,12 +64,6 @@ class _AudioCutterWidgetState extends State<AudioCutterWidget> {
     });
   }
 
-  String _formatFFmpegTime(Duration duration) {
-    final minutes = duration.inMinutes;
-    final seconds = duration.inSeconds.remainder(60);
-    return '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
-  }
-
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -93,16 +89,14 @@ class _AudioCutterWidgetState extends State<AudioCutterWidget> {
                   text: "חתוך ושמור",
                   textSize: 16,
                   unfillColors: widget.onCutDownload ?? false,
-                  onTap: () {
-                    widget.onDoneCut(
-                        (_formatDuration(start), _formatDuration(end)));
-                  },
+                  onTap: () => widget.onDoneCut(
+                      (_formatDuration(start), _formatDuration(end))),
                 ),
                 if (widget.onCutDownload ?? false)
                   AppButton(
                     text: "הפוך לצלצול",
                     textSize: 16,
-                    onTap: () {},
+                    onTap: () => widget.onSetRingtone.call(),
                   ),
               ],
             ),

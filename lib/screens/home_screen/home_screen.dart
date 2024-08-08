@@ -116,14 +116,17 @@ class _HomeScreenState extends State<HomeScreen> {
                   if (state is HomeScreenGetFile) ...[
                     const SizedBox(height: 24),
                     AudioCutterWidget(
-                        file: state.file,
-                        onDoneCut: (points) {
-                          final String start = points.$1;
-                          final String end = points.$2;
-                          bloc.add(HomeScreenDownloadCutAudioEvent(
-                              start: start, end: end));
-                        },
-                        onCutDownload: state.doneCut),
+                      file: state.file,
+                      onCutDownload: state.doneCut,
+                      onDoneCut: (points) {
+                        final String start = points.$1;
+                        final String end = points.$2;
+                        bloc.add(HomeScreenDownloadCutAudioEvent(
+                            start: start, end: end));
+                      },
+                      onSetRingtone: () => bloc
+                          .add(HomeScreenSetRingtoneEvent(context: context)),
+                    ),
                   ],
                 ]
               : [],

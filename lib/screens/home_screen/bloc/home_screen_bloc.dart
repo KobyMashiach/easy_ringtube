@@ -4,10 +4,11 @@ import 'dart:io';
 
 import 'package:bloc/bloc.dart';
 import 'package:easy_ringtube/core/consts.dart';
+import 'package:easy_ringtube/tests/ringtone_dialog.dart';
 import 'package:ffmpeg_kit_flutter_full/ffmpeg_kit.dart';
 import 'package:ffmpeg_kit_flutter_full/return_code.dart';
 
-import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:youtube_explode_dart/youtube_explode_dart.dart';
 
@@ -25,6 +26,7 @@ class HomeScreenBloc extends Bloc<HomeScreenEvent, HomeScreenState> {
     on<HomeScreenDownloadCutAudioEvent>(_homeScreenDownloadCutAudioEvent);
     on<HomeScreenGetFileToCutEvent>(_homeScreenGetFileToCutEvent);
     on<HomeScreenResetEvent>(_homeScreenResetEvent);
+    on<HomeScreenSetRingtoneEvent>(_homeScreenSetRingtoneEvent);
   }
 
   FutureOr<void> _homeScreenLoadVideoEvent(
@@ -172,5 +174,11 @@ class HomeScreenBloc extends Bloc<HomeScreenEvent, HomeScreenState> {
       HomeScreenResetEvent event, Emitter<HomeScreenState> emit) {
     video = null;
     emit(HomeScreenInitial(video: null));
+  }
+
+  FutureOr<void> _homeScreenSetRingtoneEvent(
+      HomeScreenSetRingtoneEvent event, Emitter<HomeScreenState> emit) {
+    final filePath = '$downloadPath/${video!.title}.mp3';
+    showRingtoneOptionsDialog(event.context, filePath);
   }
 }

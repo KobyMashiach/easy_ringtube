@@ -1,4 +1,3 @@
-import 'package:easy_ringtube/core/translates/get_tran.dart';
 import 'package:flutter/material.dart';
 
 import 'package:kh_easy_dev/kh_easy_dev.dart';
@@ -24,13 +23,13 @@ class GeneralDialog extends StatelessWidget {
           ? []
           : [
               GenericButtonModel(
-                  text: true ? "OK" : appTranslate('ok'),
+                  text: "אישור",
                   type: GenericButtonType.outlined,
                   onPressed: () {
                     Navigator.of(context).pop(true);
                   }),
               GenericButtonModel(
-                text: true ? "Cancel" : appTranslate('cancel'),
+                text: "ביטול",
                 type: GenericButtonType.outlined,
                 onPressed: () {
                   Navigator.of(context).pop(false);

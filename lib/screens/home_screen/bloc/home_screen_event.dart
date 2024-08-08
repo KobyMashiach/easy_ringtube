@@ -23,3 +23,9 @@ class HomeScreenDownloadCutAudioEvent extends HomeScreenEvent {
 }
 
 class HomeScreenGetFileToCutEvent extends HomeScreenEvent {}
+
+class HomeScreenSetRingtoneEvent extends HomeScreenEvent {
+  final BuildContext context;
+
+  HomeScreenSetRingtoneEvent({required this.context});
+}

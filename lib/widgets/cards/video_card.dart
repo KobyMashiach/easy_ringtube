@@ -14,8 +14,6 @@ class VideoPlayerCard extends StatefulWidget {
 class _VideoPlayerCardState extends State<VideoPlayerCard> {
   late YoutubePlayerController _controller;
 
-  bool _isPlayerReady = false;
-
   void initState() {
     super.initState();
     _controller = YoutubePlayerController(
