@@ -4,7 +4,8 @@ import 'dart:io';
 
 import 'package:bloc/bloc.dart';
 import 'package:easy_ringtube/core/consts.dart';
-import 'package:flutter_ffmpeg/flutter_ffmpeg.dart';
+import 'package:ffmpeg_kit_flutter/ffmpeg_kit.dart';
+import 'package:ffmpeg_kit_flutter/return_code.dart';
 import 'package:meta/meta.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:youtube_explode_dart/youtube_explode_dart.dart';
@@ -90,8 +91,6 @@ class HomeScreenBloc extends Bloc<HomeScreenEvent, HomeScreenState> {
       bool isCut = false,
       String? start,
       String? end}) async {
-    final FlutterFFmpeg _flutterFFmpeg = FlutterFFmpeg();
-
     try {
       final storageStatus = await Permission.manageExternalStorage.request();
       if (!storageStatus.isGranted) {
@@ -129,15 +128,27 @@ class HomeScreenBloc extends Bloc<HomeScreenEvent, HomeScreenState> {
               '${downloadsDir.path}/${video!.title}_cut.${isAudio ? "mp3" : "mp4"}';
 
           log("start: 00:$start end: 00:$end");
+          final command =
+              '-i "$filePath" -ss 00:$start -to 00:$end "$cutFilePath".mp4';
 
-          int rc = await _flutterFFmpeg.execute(
-              '-i "$filePath" -ss 00:$start -to 00:$end "$cutFilePath"');
+          // int rc = await _flutterFFmpeg.execute(command);
+          FFmpegKit.execute(command).then((session) async {
+            final returnCode = await session.getReturnCode();
 
-          if (rc == 0) {
-            log("FFmpeg process completed successfully.");
-          } else {
-            log("FFmpeg process failed with return code $rc.");
-          }
+            if (ReturnCode.isSuccess(returnCode)) {
+              log("FFmpeg process completed successfully.");
+            } else if (ReturnCode.isCancel(returnCode)) {
+              log("FFmpeg process cancel with return code $returnCode.");
+            } else {
+              log("FFmpeg process failed with return code $returnCode.");
+            }
+          });
+
+          // if (rc == 0) {
+          //   log("FFmpeg process completed successfully.");
+          // } else {
+          //   log("FFmpeg process failed with return code $rc.");
+          // }
 
           File cutFile = File(cutFilePath);
 
