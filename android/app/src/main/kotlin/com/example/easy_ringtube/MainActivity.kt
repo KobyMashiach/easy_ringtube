@@ -1,4 +1,4 @@
-package com.example.easy_ringtube
+package com.KHEasyDev.easy_ringtube
 
 import android.content.ContentValues
 import android.content.Intent
