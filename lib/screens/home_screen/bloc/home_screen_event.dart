@@ -16,10 +16,13 @@ class HomeScreenDownloadAllVideoEvent extends HomeScreenEvent {}
 class HomeScreenDownloadAllAudioEvent extends HomeScreenEvent {}
 
 class HomeScreenDownloadCutAudioEvent extends HomeScreenEvent {
+  final BuildContext context;
+
   final String start;
   final String end;
 
-  HomeScreenDownloadCutAudioEvent({required this.start, required this.end});
+  HomeScreenDownloadCutAudioEvent(
+      {required this.start, required this.end, required this.context});
 }
 
 class HomeScreenGetFileToCutEvent extends HomeScreenEvent {}

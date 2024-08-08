@@ -5,11 +5,14 @@ import 'dart:io';
 import 'package:bloc/bloc.dart';
 import 'package:easy_ringtube/core/consts.dart';
 import 'package:easy_ringtube/services/set_ringtone_service.dart';
+import 'package:easy_ringtube/widgets/dialogs/choose_directory_dialog.dart';
 import 'package:easy_ringtube/widgets/dialogs/ringtone_dialog.dart';
 import 'package:ffmpeg_kit_flutter_full/ffmpeg_kit.dart';
 import 'package:ffmpeg_kit_flutter_full/return_code.dart';
+import 'package:file_picker/file_picker.dart';
 
 import 'package:flutter/material.dart';
+import 'package:kh_easy_dev/kh_easy_dev.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:youtube_explode_dart/youtube_explode_dart.dart';
 
@@ -20,6 +23,7 @@ class HomeScreenBloc extends Bloc<HomeScreenEvent, HomeScreenState> {
   final yt = YoutubeExplode();
   late Video? video;
   late File? file;
+  late String? cutFilePath;
   HomeScreenBloc() : super(HomeScreenInitial(video: null)) {
     on<HomeScreenLoadVideoEvent>(_homeScreenLoadVideoEvent);
     on<HomeScreenDownloadAllVideoEvent>(_homeScreenDownloadAllVideoEvent);
@@ -56,10 +60,8 @@ class HomeScreenBloc extends Bloc<HomeScreenEvent, HomeScreenState> {
   FutureOr<void> _homeScreenDownloadCutAudioEvent(
       HomeScreenDownloadCutAudioEvent event,
       Emitter<HomeScreenState> emit) async {
-    // Create a completer to handle the asynchronous completion
     final completer = Completer<void>();
 
-    // Perform the asynchronous operation
     await downloadVideoOrAudio(
       isAudio: true,
       isCut: true,
@@ -69,8 +71,8 @@ class HomeScreenBloc extends Bloc<HomeScreenEvent, HomeScreenState> {
         emit(HomeScreenGetFile(video: video, file: file!, doneCut: true));
         completer.complete();
       },
+      context: event.context,
     );
-
     await completer.future;
   }
 
@@ -105,6 +107,7 @@ class HomeScreenBloc extends Bloc<HomeScreenEvent, HomeScreenState> {
     String? start,
     String? end,
     VoidCallback? doneCut,
+    BuildContext? context,
   }) async {
     try {
       final storageStatus = await Permission.manageExternalStorage.request();
@@ -140,30 +143,44 @@ class HomeScreenBloc extends Bloc<HomeScreenEvent, HomeScreenState> {
       log('Download completed: $filePath');
 
       if (isAudio && isCut) {
-        try {
-          log("start: 00:$start end: 00:$end");
-          String cutFilePath =
-              '${downloadsDir.path}/${cutFilePathWithoutFinish(video!.title)}';
+        String? selectedDirectory = await showDialog(
+            context: context!,
+            builder: (BuildContext context) => DirectoryPickerDialog());
 
-          log(cutFilePath);
+        log(selectedDirectory ?? "don't select directory");
+        if (selectedDirectory != null) {
+          cutFilePath = selectedDirectory;
+          try {
+            log("start: 00:$start end: 00:$end");
+            String cutFilePathTemp =
+                '$cutFilePath/${cutFilePathWithoutFinish(video!.title)}';
 
-          final command =
-              '-i "$filePath" -ss 00:$start -to 00:$end "$cutFilePath".mp3';
+            log(cutFilePathTemp);
 
-          FFmpegKit.execute(command).then((session) async {
-            final returnCode = await session.getReturnCode();
+            final command =
+                '-i "$filePath" -ss 00:$start -to 00:$end "$cutFilePathTemp".mp3';
 
-            if (ReturnCode.isSuccess(returnCode)) {
-              log("FFmpeg process completed successfully.");
-              doneCut!.call();
-            } else if (ReturnCode.isCancel(returnCode)) {
-              log("FFmpeg process cancel with return code $returnCode.");
-            } else {
-              log("FFmpeg process failed with return code $returnCode.");
-            }
-          });
-        } catch (e) {
-          log('Error during cutting process: $e');
+            FFmpegKit.execute(command).then((session) async {
+              final returnCode = await session.getReturnCode();
+
+              if (ReturnCode.isSuccess(returnCode)) {
+                log("FFmpeg process completed successfully.");
+                if (file.existsSync()) {
+                  file.deleteSync();
+                  log("Original file deleted: $filePath");
+                }
+                doneCut!.call();
+              } else if (ReturnCode.isCancel(returnCode)) {
+                log("FFmpeg process cancel with return code $returnCode.");
+              } else {
+                log("FFmpeg process failed with return code $returnCode.");
+              }
+            });
+          } catch (e) {
+            log('Error during cutting process: $e');
+          }
+        } else {
+          kheasydevAppToast("חובה לבחור תיקייה");
         }
       }
     } catch (e) {
@@ -180,7 +197,7 @@ class HomeScreenBloc extends Bloc<HomeScreenEvent, HomeScreenState> {
   FutureOr<void> _homeScreenSetRingtoneEvent(
       HomeScreenSetRingtoneEvent event, Emitter<HomeScreenState> emit) async {
     final filePath =
-        '$downloadPath/${cutFilePathWithoutFinish(video!.title)}.mp3';
+        '$cutFilePath/${cutFilePathWithoutFinish(video!.title)}.mp3';
     final userChoise = await showDialog(
         context: event.context,
         builder: (BuildContext context) => RingtoneDialog());

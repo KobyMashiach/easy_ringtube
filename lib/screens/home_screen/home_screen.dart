@@ -51,7 +51,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     : [
                         IconButton(
                             onPressed: () => bloc.add(HomeScreenResetEvent()),
-                            icon: Icon(Icons.restart_alt_rounded))
+                            icon: Icon(Icons.delete_forever))
                       ]),
             drawer: appSideMenu(context, index: 0),
             body: state is HomeScreenLoading
@@ -122,7 +122,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         final String start = points.$1;
                         final String end = points.$2;
                         bloc.add(HomeScreenDownloadCutAudioEvent(
-                            start: start, end: end));
+                            start: start, end: end, context: context));
                       },
                       onSetRingtone: () => bloc
                           .add(HomeScreenSetRingtoneEvent(context: context)),
