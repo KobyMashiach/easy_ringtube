@@ -25,6 +25,8 @@ final class HomeScreenGetVideo extends HomeScreenState {
 
 final class HomeScreenGetFile extends HomeScreenState {
   final File file;
+  final bool doneCut;
 
-  HomeScreenGetFile({required this.file, required super.video});
+  HomeScreenGetFile(
+      {required this.file, required super.video, required this.doneCut});
 }

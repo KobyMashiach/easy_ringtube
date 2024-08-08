@@ -7,10 +7,12 @@ import 'package:audioplayers/audioplayers.dart';
 class AudioCutterWidget extends StatefulWidget {
   final File file;
   final Function((String, String)) onDoneCut;
+  final bool? onCutDownload;
   const AudioCutterWidget({
     Key? key,
     required this.file,
     required this.onDoneCut,
+    this.onCutDownload,
   }) : super(key: key);
 
   @override
@@ -84,14 +86,25 @@ class _AudioCutterWidgetState extends State<AudioCutterWidget> {
             Text('${_formatDuration(position)} / ${_formatDuration(end)}'),
             startSlider(),
             endSlider(),
-            AppButton(
-              text: "חתוך ושמור",
-              padding: EdgeInsets.symmetric(horizontal: 80, vertical: 8),
-              textSize: 16,
-              onTap: () {
-                widget
-                    .onDoneCut((_formatDuration(start), _formatDuration(end)));
-              },
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                AppButton(
+                  text: "חתוך ושמור",
+                  textSize: 16,
+                  unfillColors: widget.onCutDownload ?? false,
+                  onTap: () {
+                    widget.onDoneCut(
+                        (_formatDuration(start), _formatDuration(end)));
+                  },
+                ),
+                if (widget.onCutDownload ?? false)
+                  AppButton(
+                    text: "הפוך לצלצול",
+                    textSize: 16,
+                    onTap: () {},
+                  ),
+              ],
             ),
           ],
         ),

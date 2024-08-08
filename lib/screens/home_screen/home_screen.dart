@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:easy_ringtube/core/consts.dart';
 import 'package:easy_ringtube/core/text_styles.dart';
 import 'package:easy_ringtube/widgets/audio_cutter.dart';
@@ -39,6 +41,7 @@ class _HomeScreenState extends State<HomeScreen> {
       child: BlocBuilder<HomeScreenBloc, HomeScreenState>(
         builder: (context, state) {
           final bloc = context.read<HomeScreenBloc>();
+          log(name: "state name", state.runtimeType.toString());
           return Scaffold(
             appBar: appAppBar(
                 title: "מסך בית",
@@ -113,14 +116,14 @@ class _HomeScreenState extends State<HomeScreen> {
                   if (state is HomeScreenGetFile) ...[
                     const SizedBox(height: 24),
                     AudioCutterWidget(
-                      file: state.file,
-                      onDoneCut: (points) {
-                        final String start = points.$1;
-                        final String end = points.$2;
-                        bloc.add(HomeScreenDownloadCutAudioEvent(
-                            start: start, end: end));
-                      },
-                    ),
+                        file: state.file,
+                        onDoneCut: (points) {
+                          final String start = points.$1;
+                          final String end = points.$2;
+                          bloc.add(HomeScreenDownloadCutAudioEvent(
+                              start: start, end: end));
+                        },
+                        onCutDownload: state.doneCut),
                   ],
                 ]
               : [],

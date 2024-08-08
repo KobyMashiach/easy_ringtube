@@ -6,6 +6,7 @@ import 'package:bloc/bloc.dart';
 import 'package:easy_ringtube/core/consts.dart';
 import 'package:ffmpeg_kit_flutter/ffmpeg_kit.dart';
 import 'package:ffmpeg_kit_flutter/return_code.dart';
+import 'package:flutter/foundation.dart';
 import 'package:meta/meta.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:youtube_explode_dart/youtube_explode_dart.dart';
@@ -16,6 +17,7 @@ part 'home_screen_state.dart';
 class HomeScreenBloc extends Bloc<HomeScreenEvent, HomeScreenState> {
   final yt = YoutubeExplode();
   late Video? video;
+  late File? file;
   HomeScreenBloc() : super(HomeScreenInitial(video: null)) {
     on<HomeScreenLoadVideoEvent>(_homeScreenLoadVideoEvent);
     on<HomeScreenDownloadAllVideoEvent>(_homeScreenDownloadAllVideoEvent);
@@ -51,8 +53,22 @@ class HomeScreenBloc extends Bloc<HomeScreenEvent, HomeScreenState> {
   FutureOr<void> _homeScreenDownloadCutAudioEvent(
       HomeScreenDownloadCutAudioEvent event,
       Emitter<HomeScreenState> emit) async {
-    downloadVideoOrAudio(
-        isAudio: true, isCut: true, start: event.start, end: event.end);
+    // Create a completer to handle the asynchronous completion
+    final completer = Completer<void>();
+
+    // Perform the asynchronous operation
+    await downloadVideoOrAudio(
+      isAudio: true,
+      isCut: true,
+      start: event.start,
+      end: event.end,
+      doneCut: () {
+        emit(HomeScreenGetFile(video: video, file: file!, doneCut: true));
+        completer.complete();
+      },
+    );
+
+    await completer.future;
   }
 
   FutureOr<void> _homeScreenGetFileToCutEvent(
@@ -73,18 +89,20 @@ class HomeScreenBloc extends Bloc<HomeScreenEvent, HomeScreenState> {
       downloadVideoOrAudio(isAudio: true);
 
       String filePath = '${downloadsDir.path}/${video!.title}.mp3';
-      File file = File(filePath);
-      emit(HomeScreenGetFile(video: video, file: file));
+      file = File(filePath);
+      emit(HomeScreenGetFile(video: video, file: file!, doneCut: false));
     } catch (e) {
       log('Error downloading video or audio: $e');
     }
   }
 
-  void downloadVideoOrAudio(
-      {required bool isAudio,
-      bool isCut = false,
-      String? start,
-      String? end}) async {
+  Future<void> downloadVideoOrAudio({
+    required bool isAudio,
+    bool isCut = false,
+    String? start,
+    String? end,
+    VoidCallback? doneCut,
+  }) async {
     try {
       final storageStatus = await Permission.manageExternalStorage.request();
       if (!storageStatus.isGranted) {
@@ -116,40 +134,32 @@ class HomeScreenBloc extends Bloc<HomeScreenEvent, HomeScreenState> {
       await stream.pipe(fileStream);
       await fileStream.flush();
       await fileStream.close();
+      log('Download completed: $filePath');
+
       if (isAudio && isCut) {
         try {
-          String cutFilePath =
-              '${downloadsDir.path}/${video!.title}_cut.${isAudio ? "mp3" : "mp4"}';
-
           log("start: 00:$start end: 00:$end");
-
+          String cutFilePath =
+              '${downloadsDir.path}/${cutFilePathWithoutFinish(video!.title)}';
           final command =
-              '-i "$filePath" -ss 00:$start -to 00:$end -acodec libmp3lame -c copy "$cutFilePath"';
+              '-i "$filePath" -ss 00:$start -to 00:$end "$cutFilePath".mp3';
 
           FFmpegKit.execute(command).then((session) async {
             final returnCode = await session.getReturnCode();
 
             if (ReturnCode.isSuccess(returnCode)) {
               log("FFmpeg process completed successfully.");
+              doneCut!.call();
             } else if (ReturnCode.isCancel(returnCode)) {
               log("FFmpeg process cancel with return code $returnCode.");
             } else {
               log("FFmpeg process failed with return code $returnCode.");
             }
           });
-
-          File cutFile = File(cutFilePath);
-
-          if (await cutFile.exists()) {
-            log('Cut audio completed: $cutFilePath');
-          } else {
-            log('Failed to create cut file: $cutFilePath');
-          }
         } catch (e) {
           log('Error during cutting process: $e');
         }
       }
-      log('Download completed: $filePath');
     } catch (e) {
       log('Error downloading video or audio: $e');
     }
