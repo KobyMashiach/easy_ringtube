@@ -1,10 +1,8 @@
 import 'dart:io';
 import 'package:easy_ringtube/core/colors.dart';
-import 'package:easy_ringtube/core/consts.dart';
 import 'package:easy_ringtube/widgets/design/buttons/app_button.dart';
 import 'package:flutter/material.dart';
 import 'package:audioplayers/audioplayers.dart';
-import 'package:flutter_ffmpeg/flutter_ffmpeg.dart';
 
 class AudioCutterWidget extends StatefulWidget {
   final File file;
@@ -22,7 +20,6 @@ class AudioCutterWidget extends StatefulWidget {
 class _AudioCutterWidgetState extends State<AudioCutterWidget> {
   late File inputFile;
   final player = AudioPlayer();
-  final flutterFFmpeg = FlutterFFmpeg();
   bool isPlaying = false;
   Duration duration = Duration.zero;
   Duration position = Duration.zero;
