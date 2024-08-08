@@ -70,13 +70,7 @@ class HomeScreenBloc extends Bloc<HomeScreenEvent, HomeScreenState> {
         log('Downloads directory not found');
         return;
       }
-
-      final StreamManifest manifest =
-          await yt.videos.streamsClient.getManifest(video!.id.value);
-
-      dynamic streamInfo = manifest.audioOnly.withHighestBitrate();
-
-      Stream<List<int>> stream = yt.videos.streamsClient.get(streamInfo);
+      downloadVideoOrAudio(isAudio: true);
 
       String filePath = '${downloadsDir.path}/${video!.title}.mp3';
       File file = File(filePath);
@@ -128,10 +122,10 @@ class HomeScreenBloc extends Bloc<HomeScreenEvent, HomeScreenState> {
               '${downloadsDir.path}/${video!.title}_cut.${isAudio ? "mp3" : "mp4"}';
 
           log("start: 00:$start end: 00:$end");
-          final command =
-              '-i "$filePath" -ss 00:$start -to 00:$end "$cutFilePath".mp4';
 
-          // int rc = await _flutterFFmpeg.execute(command);
+          final command =
+              '-i "$filePath" -ss 00:$start -to 00:$end -acodec libmp3lame -c copy "$cutFilePath"';
+
           FFmpegKit.execute(command).then((session) async {
             final returnCode = await session.getReturnCode();
 
@@ -143,12 +137,6 @@ class HomeScreenBloc extends Bloc<HomeScreenEvent, HomeScreenState> {
               log("FFmpeg process failed with return code $returnCode.");
             }
           });
-
-          // if (rc == 0) {
-          //   log("FFmpeg process completed successfully.");
-          // } else {
-          //   log("FFmpeg process failed with return code $rc.");
-          // }
 
           File cutFile = File(cutFilePath);
 
