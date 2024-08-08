@@ -3,22 +3,24 @@ package com.example.easy_ringtube
 import android.content.ContentValues
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import android.provider.ContactsContract
 import android.provider.MediaStore
+import android.provider.Settings
 import android.media.RingtoneManager
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
-import java.io.File
-import android.provider.Settings
-import android.os.Build
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import java.io.File
+import android.content.pm.PackageManager // Add this import
 
 class MainActivity : FlutterActivity() {
     private val CHANNEL = "com.example/ringtone"
     private val CONTACT_PICK_REQUEST_CODE = 1
     private val REQUEST_CODE_WRITE_SETTINGS = 200
+    private val REQUEST_CODE_WRITE_CONTACTS = 300
     private lateinit var ringtoneFilePath: String
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
@@ -39,7 +41,11 @@ class MainActivity : FlutterActivity() {
                     "selectContactAndSetRingtone" -> {
                         ringtoneFilePath = call.argument<String>("filePath") ?: ""
                         if (checkWriteSettingsPermission()) {
-                            selectContactAndSetRingtone()
+                            if (checkWriteContactsPermission()) {
+                                selectContactAndSetRingtone()
+                            } else {
+                                requestWriteContactsPermission()
+                            }
                             result.success(null)
                         } else {
                             requestWriteSettingsPermission()
@@ -65,6 +71,26 @@ class MainActivity : FlutterActivity() {
                 data = Uri.parse("package:$packageName")
             }
             startActivityForResult(intent, REQUEST_CODE_WRITE_SETTINGS)
+        }
+    }
+
+    private fun checkWriteContactsPermission(): Boolean {
+        return ContextCompat.checkSelfPermission(this, android.Manifest.permission.WRITE_CONTACTS) == PackageManager.PERMISSION_GRANTED
+    }
+
+    private fun requestWriteContactsPermission() {
+        ActivityCompat.requestPermissions(this, arrayOf(android.Manifest.permission.WRITE_CONTACTS), REQUEST_CODE_WRITE_CONTACTS)
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == REQUEST_CODE_WRITE_CONTACTS) {
+            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                // Retry the contact-related operation
+                selectContactAndSetRingtone()
+            } else {
+                // Handle the case where the permission is denied
+            }
         }
     }
 
