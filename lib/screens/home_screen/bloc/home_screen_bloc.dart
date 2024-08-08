@@ -4,7 +4,8 @@ import 'dart:io';
 
 import 'package:bloc/bloc.dart';
 import 'package:easy_ringtube/core/consts.dart';
-import 'package:easy_ringtube/tests/ringtone_dialog.dart';
+import 'package:easy_ringtube/services/set_ringtone_service.dart';
+import 'package:easy_ringtube/widgets/dialogs/ringtone_dialog.dart';
 import 'package:ffmpeg_kit_flutter_full/ffmpeg_kit.dart';
 import 'package:ffmpeg_kit_flutter_full/return_code.dart';
 
@@ -177,8 +178,17 @@ class HomeScreenBloc extends Bloc<HomeScreenEvent, HomeScreenState> {
   }
 
   FutureOr<void> _homeScreenSetRingtoneEvent(
-      HomeScreenSetRingtoneEvent event, Emitter<HomeScreenState> emit) {
-    final filePath = '$downloadPath/${video!.title}.mp3';
-    showRingtoneOptionsDialog(event.context, filePath);
+      HomeScreenSetRingtoneEvent event, Emitter<HomeScreenState> emit) async {
+    final filePath =
+        '$downloadPath/${cutFilePathWithoutFinish(video!.title)}.mp3';
+    final userChoise = await showDialog(
+        context: event.context,
+        builder: (BuildContext context) => RingtoneDialog());
+    if (userChoise == "phone") {
+      setRingtoneForPhone(filePath);
+    }
+    if (userChoise == "contact") {
+      selectContactAndSetRingtone(filePath);
+    }
   }
 }
