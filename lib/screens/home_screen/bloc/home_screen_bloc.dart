@@ -1,13 +1,12 @@
 import 'dart:async';
 import 'dart:developer';
 import 'dart:io';
-import 'dart:math' as math;
 
 import 'package:bloc/bloc.dart';
 import 'package:easy_ringtube/core/consts.dart';
-import 'package:ffmpeg_kit_flutter/ffmpeg_kit.dart';
-import 'package:ffmpeg_kit_flutter/ffmpeg_kit_config.dart';
-import 'package:ffmpeg_kit_flutter/return_code.dart';
+import 'package:ffmpeg_kit_flutter_full/ffmpeg_kit.dart';
+import 'package:ffmpeg_kit_flutter_full/return_code.dart';
+
 import 'package:flutter/foundation.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:youtube_explode_dart/youtube_explode_dart.dart';
@@ -140,15 +139,11 @@ class HomeScreenBloc extends Bloc<HomeScreenEvent, HomeScreenState> {
       if (isAudio && isCut) {
         try {
           log("start: 00:$start end: 00:$end");
-          // String cutFilePath =
-          //     '${downloadsDir.path}/${cutFilePathWithoutFinish(video!.title)}';
           String cutFilePath =
-              '${downloadsDir.path}/${(math.Random().nextInt(9999) + 1).toString().padLeft(4, '0')}';
-          log(cutFilePath);
-          //! check
-          FFmpegKitConfig config = FFmpegKitConfig();
+              '${downloadsDir.path}/${cutFilePathWithoutFinish(video!.title)}';
 
-          //! check
+          log(cutFilePath);
+
           final command =
               '-i "$filePath" -ss 00:$start -to 00:$end "$cutFilePath".mp3';
 

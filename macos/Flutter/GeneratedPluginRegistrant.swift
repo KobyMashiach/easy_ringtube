@@ -7,7 +7,7 @@ import Foundation
 
 import audioplayers_darwin
 import connectivity_plus
-import ffmpeg_kit_flutter
+import ffmpeg_kit_flutter_full
 import flutter_localization
 import in_app_review
 import package_info_plus
