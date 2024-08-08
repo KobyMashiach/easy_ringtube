@@ -169,21 +169,21 @@ class _HomeScreenState extends State<HomeScreen> {
                 ],
               ),
             ],
-            const SizedBox(height: 32),
-            Text(
-              "סרטון דוגמה: אייל גולן - פזמון אחר",
-              style: AppTextStyle().description,
-            ),
-            const SizedBox(height: 12),
-            AppButton(
-              text: "לחץ כאן לדוגמה",
-              unfillColors: true,
-              padding: EdgeInsets.symmetric(horizontal: 80),
-              onTap: () {
-                bloc.add(HomeScreenLoadVideoEvent(videoUrl: tempVideoUrl));
-                urlController.clear();
-              },
-            ),
+            // const SizedBox(height: 32),
+            // Text(
+            //   "סרטון דוגמה: אייל גולן - פזמון אחר",
+            //   style: AppTextStyle().description,
+            // ),
+            // const SizedBox(height: 12),
+            // AppButton(
+            //   text: "לחץ כאן לדוגמה",
+            //   unfillColors: true,
+            //   padding: EdgeInsets.symmetric(horizontal: 80),
+            //   onTap: () {
+            //     bloc.add(HomeScreenLoadVideoEvent(videoUrl: tempVideoUrl));
+            //     urlController.clear();
+            //   },
+            // ),
             Spacer(),
             AppButton(
               text: "אישור",
